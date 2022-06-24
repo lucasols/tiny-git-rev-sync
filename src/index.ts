@@ -1,8 +1,7 @@
-import { spawnSync, SpawnSyncOptionsWithStringEncoding } from 'child_process'
-import path from 'path'
+import { spawnSync } from 'child_process'
 import fs from 'fs'
+import path from 'path'
 
-const PATH_SEP = path.sep
 const RE_BRANCH = /^ref: refs\/heads\/(.*)\n/
 
 const root = process.cwd()
