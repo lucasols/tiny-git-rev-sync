@@ -23,44 +23,58 @@ test('branch() returns a string with non-zero length', () => {
   expect(!!result).toBeTruthy()
 })
 
-// result = git.count()
-// assert.notEqual(result, 0, 'count() returns a non-zero number')
-// assert.equal(Math.abs(result), result, 'count() returns a positive number')
+test('count() returns a non-zero number', () => {
+  const result = git.gitCount()
 
-// result = git.date()
-// assert.equal(result instanceof Date, true, 'date() returns a date')
+  expect(result).toBeGreaterThan(0)
+})
 
-// result = git.isDirty()
-// assert.equal(typeof result, 'boolean', 'isDirty() returns a boolean')
+test('count() returns a positive number', () => {
+  const result = git.gitCount()
 
-// result = git.isTagDirty()
-// assert.equal(typeof result, 'boolean', 'isTagDirty() returns a boolean')
+  expect(result).toBeGreaterThanOrEqual(0)
+})
 
-// result = git.message()
-// assert.equal(
-//   !!result.length,
-//   true,
-//   'message() returns a string with non-zero length',
-// )
+test('date() returns a date', () => {
+  const result = git.gitDate()
 
-// result = git.tag()
-// assert.equal(
-//   !!result.length,
-//   true,
-//   'tag() returns a string with non-zero length',
-// )
+  expect(result instanceof Date).toBeTruthy()
+})
 
-// result = git.tagFirstParent()
-// assert.equal(
-//   result.length !== 0,
-//   true,
-//   'tagFirstParent() returns a string with non-zero length',
-// )
+test('isDirty() returns a boolean', () => {
+  const result = git.gitIsDirty()
 
-// result = git.remoteUrl()
-// assert.equal(
-//   result.indexOf('https://github.com') === 0 ||
-//     result.indexOf('git@github.com') === 0,
-//   true,
-//   "remoteUrl() returns unexpected value: '" + result + "'",
-// )
+  expect(typeof result).toBe('boolean')
+})
+
+test('isTagDirty() returns a boolean', () => {
+  const result = git.gitIsTagDirty()
+
+  expect(typeof result).toBe('boolean')
+})
+
+test('message() returns a string with non-zero length', () => {
+  const result = git.gitMessage()
+
+  expect(!!result.length).toBeTruthy()
+})
+
+test('tag() returns a string with non-zero length', () => {
+  const result = git.gitTag()
+
+  expect(!!result.length).toBeTruthy()
+})
+
+test('tagFirstParent() returns a string with non-zero length', () => {
+  const result = git.gitTagFirstParent()
+
+  expect(!!result.length).toBeTruthy()
+})
+
+test('remoteUrl() works', () => {
+  const result = git.gitRemoteUrl()
+
+  expect(
+    result.includes('https://github.com') || result.includes('git@github.com'),
+  ).toBeTruthy()
+})
