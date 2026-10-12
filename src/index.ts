@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 const RE_BRANCH = /^ref: refs\/heads\/(.*)\n/
+const RE_GITDIR = /^gitdir: (.*)$/m
 
 const root = process.cwd()
 
@@ -34,6 +35,18 @@ function _getGitDirectory(start = root): string {
     return testPath
   }
 
+  // In worktrees and submodules `.git` is a file pointing to the real git dir
+  if (pathStat?.isFile()) {
+    const gitDirMatch = fs
+      .readFileSync(testPath, 'utf8')
+      .match(RE_GITDIR)?.[1]
+      ?.trim()
+
+    if (gitDirMatch) {
+      return path.resolve(start, gitDirMatch)
+    }
+  }
+
   const parent = path.resolve(start, '..')
 
   if (parent === start) {
@@ -41,6 +54,18 @@ function _getGitDirectory(start = root): string {
   }
 
   return _getGitDirectory(parent)
+}
+
+// Worktree git dirs only hold per-worktree state (HEAD, index...), the shared
+// refs live in the directory pointed by the `commondir` file
+function _getCommonGitDirectory(gitDir: string): string {
+  const commonDirPath = path.resolve(gitDir, 'commondir')
+
+  if (!fasterFileExists(commonDirPath)) {
+    return gitDir
+  }
+
+  return path.resolve(gitDir, fs.readFileSync(commonDirPath, 'utf8').trim())
 }
 
 export function gitBranch(dir?: string): string {
@@ -67,11 +92,7 @@ export function gitLong(dir?: string) {
     return b.substring(10)
   }
 
-  const gitDir = _getGitDirectory(dir)
-
-  const gitRootDir = gitDir.includes('.git/worktrees/')
-    ? gitDir.replace(/\.git\/worktrees\/.+$/, '.git')
-    : gitDir
+  const gitRootDir = _getCommonGitDirectory(_getGitDirectory(dir))
 
   const refsFilePath = path.resolve(gitRootDir, 'refs', 'heads', b)
 
@@ -83,12 +104,15 @@ export function gitLong(dir?: string) {
     // If there isn't an entry in /refs/heads for this branch, it may be that
     // the ref is stored in the packfile (.git/packed-refs). Fall back to
     // looking up the hash here.
-    const packedRefsPath = path.resolve(gitDir, 'packed-refs')
+    const packedRefsPath = path.resolve(gitRootDir, 'packed-refs')
 
     if (fasterFileExists(packedRefsPath)) {
       const refToFind = ['refs', 'heads', b].join('/')
       const packfileContents = fs.readFileSync(packedRefsPath, 'utf8')
-      const packfileRegex = new RegExp(`(.*) ${escapeRegex(refToFind)}`)
+      const packfileRegex = new RegExp(
+        `^([0-9a-f]+) ${escapeRegex(refToFind)}$`,
+        'm',
+      )
 
       const match = packfileRegex.exec(packfileContents)?.[1]
 

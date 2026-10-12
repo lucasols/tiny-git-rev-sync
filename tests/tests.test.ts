@@ -1,4 +1,8 @@
-import { expect, test } from 'vitest'
+import { execFileSync } from 'child_process'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+import { afterAll, describe, expect, test } from 'vitest'
 import * as git from '../src'
 
 test('short() returns string of length 4+', () => {
@@ -77,4 +81,50 @@ test('remoteUrl() works', () => {
   expect(
     result.includes('https://github.com') || result.includes('git@github.com'),
   ).toBeTruthy()
+})
+
+describe('worktrees', () => {
+  const tmpDir = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'tiny-git-rev-sync-')),
+  )
+  const mainDir = path.join(tmpDir, 'main')
+  const worktreeDir = path.join(tmpDir, 'worktree')
+
+  function runGit(cwd: string, args: string[]) {
+    return execFileSync(
+      'git',
+      ['-c', 'user.name=test', '-c', 'user.email=test@test.com', ...args],
+      { cwd, encoding: 'utf8' },
+    ).trim()
+  }
+
+  fs.mkdirSync(mainDir)
+  runGit(mainDir, ['init', '-q', '-b', 'main'])
+  runGit(mainDir, ['commit', '-q', '--allow-empty', '-m', 'init'])
+  runGit(mainDir, ['worktree', 'add', '-q', '-b', 'feature', worktreeDir])
+  runGit(worktreeDir, ['commit', '-q', '--allow-empty', '-m', 'feature'])
+
+  afterAll(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  test('branch() returns the worktree branch', () => {
+    expect(git.gitBranch(worktreeDir)).toBe('feature')
+    expect(git.gitBranch(mainDir)).toBe('main')
+  })
+
+  test('long() returns the worktree HEAD', () => {
+    expect(git.gitLong(worktreeDir)).toBe(
+      runGit(worktreeDir, ['rev-parse', 'HEAD']),
+    )
+  })
+
+  test('long() works with packed refs', () => {
+    runGit(mainDir, ['pack-refs', '--all'])
+
+    expect(git.gitLong(worktreeDir)).toBe(
+      runGit(worktreeDir, ['rev-parse', 'HEAD']),
+    )
+    expect(git.gitLong(mainDir)).toBe(runGit(mainDir, ['rev-parse', 'HEAD']))
+  })
 })
