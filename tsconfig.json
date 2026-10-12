@@ -2,8 +2,9 @@
   "compileOnSave": false,
   "compilerOptions": {
     "target": "ESNext",
-    "moduleResolution": "node",
-    "module": "CommonJS",
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+    "types": ["node"],
     "jsx": "preserve",
     "skipLibCheck": true,
     "noEmit": true,
@@ -15,7 +16,6 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
-    "keyofStringsOnly": true,
     "strictPropertyInitialization": true
   }
 }

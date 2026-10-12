@@ -3,7 +3,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { afterAll, describe, expect, test } from 'vitest'
-import * as git from '../src'
+import * as git from '../src/index.js'
 
 test('short() returns string of length 4+', () => {
   expect(git.gitShort().length > 3).toBeTruthy()
